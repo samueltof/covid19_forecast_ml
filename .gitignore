@@ -4,6 +4,9 @@ __pycache__/
 *$py.class
 
 *.csv
+read_data.py
+global_config/*
+/global_config
 
 # C extensions
 *.so
