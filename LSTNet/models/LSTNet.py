@@ -1,24 +1,23 @@
-import sys; sys.path.append('../')
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class LSTNet(nn.Module):
+class Model(nn.Module):
     def __init__(self, args, data):
-        super(LSTNet, self).__init__()
-        self.use_cuda = True
-        self.P = args['window']
+        super(Model, self).__init__()
+        self.use_cuda = args.cuda
+        self.P = args.window;
         self.m = data.m
-        self.hidR = args['hidRNN'];
-        self.hidC = args['hidCNN'];
-        self.hidS = args['hidSkip'];
-        self.Ck = args['CNN_kernel'];
-        self.skip = args['skip'];
+        self.hidR = args.hidRNN;
+        self.hidC = args.hidCNN;
+        self.hidS = args.hidSkip;
+        self.Ck = args.CNN_kernel;
+        self.skip = args.skip;
         self.pt = (self.P - self.Ck)/self.skip
-        self.hw = args['highway_window']
+        self.hw = args.highway_window
         self.conv1 = nn.Conv2d(1, self.hidC, kernel_size = (self.Ck, self.m));
         self.GRU1 = nn.GRU(self.hidC, self.hidR);
-        self.dropout = nn.Dropout(p = args['dropout']);
+        self.dropout = nn.Dropout(p = args.dropout);
         if (self.skip > 0):
             self.GRUskip = nn.GRU(self.hidC, self.hidS);
             self.linear1 = nn.Linear(self.hidR + self.skip * self.hidS, self.m);
@@ -27,9 +26,9 @@ class LSTNet(nn.Module):
         if (self.hw > 0):
             self.highway = nn.Linear(self.hw, 1);
         self.output = None;
-        if (args['output_fun'] == 'sigmoid'):
+        if (args.output_fun == 'sigmoid'):
             self.output = F.sigmoid;
-        if (args['output_fun'] == 'tanh'):
+        if (args.output_fun == 'tanh'):
             self.output = F.tanh;
  
     def forward(self, x):
@@ -48,6 +47,7 @@ class LSTNet(nn.Module):
 
         
         #skip-rnn
+        
         if (self.skip > 0):
             s = c[:,:, int(-self.pt * self.skip):].contiguous();
             s = s.view(batch_size, self.hidC, self.pt, self.skip);
@@ -57,6 +57,7 @@ class LSTNet(nn.Module):
             s = s.view(batch_size, self.skip * self.hidS);
             s = self.dropout(s);
             r = torch.cat((r,s),1);
+        
         res = self.linear1(r);
         
         #highway
