@@ -16,7 +16,7 @@ def _fetch_data(trendreq, kw_list, timeframe='today 3-m', cat=0, geo='', gprop='
         except ResponseError as err:
             print(err)
             print(f'Trying again in {60 + 5 * attempts} seconds.')
-            sleep(60 + 5 * attempts)
+            #time.sleep(60 + 5 * attempts)
             attempts += 1
             if attempts > 3:
                 print('Failed after 3 attemps, abort fetching.')

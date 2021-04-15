@@ -1,0 +1,33 @@
+r,id
+0,anosmia
+1,dolor de pecho
+2,resfriado/gripa(e)
+3,sintomas resfriado/gripa(e)
+4,tos
+5,covid-19
+6,covid minsalud
+7,sintomas covid-19
+8,covid oms
+9,cansancio
+10,fiebre
+11,bronquitis
+12,contagio
+13,tiempo infeccion
+14,None
+16,meds/remds covid-19
+17,meds/remds resfriado/gripa(e)
+18,influenza
+19,aislamiento
+20,dolor articulaciones
+21,sangrado nariz
+22,oseltamivir
+23,dolor toser
+24,neumonia covid
+25,cuarentena
+26,enfermedad/virus resp
+27,dextrometorfano
+28,mocos
+29,dolor garganta
+30,faringitis
+31,bronquitis
+32,oseltamivir
