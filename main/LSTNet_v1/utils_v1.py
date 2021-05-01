@@ -17,7 +17,7 @@ def related_trends(search_terms, main_terms, trends, r_list):
     return df_related_trends_avg
 
 
-def get_related_trend(search_terms, main_terms, trends, r):
+def get_related_trend(search_terms, main_terms, trends, r_in):
     entry_terms = search_terms.columns.values[1:]
     map_term_2_r = dict(zip(search_terms['term'], search_terms['r']))
     map_r_2_term = dict(zip(main_terms['r'], main_terms['id']))
@@ -25,7 +25,7 @@ def get_related_trend(search_terms, main_terms, trends, r):
     df_related_terms = []
     maximuns = []
     for kw in entry_terms:
-        if r == map_term_2_r[kw]:
+        if r_in == map_term_2_r[kw]:
             kw_trend = trends[kw]; kw_trend = kw_trend.reset_index()
             kw_trend["date"] = pd.to_datetime( kw_trend["date"] ) 
             kw_trend['rw']   = kw_trend[kw].rolling(window=7).mean()
