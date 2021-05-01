@@ -10,6 +10,8 @@ global_config/*
 
 # C extensions
 *.so
+*.pth
+*.txt
 
 # Distribution / packaging
 .Python
