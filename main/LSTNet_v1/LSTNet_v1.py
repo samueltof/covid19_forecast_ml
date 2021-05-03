@@ -4,16 +4,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class LSTNet(nn.Module):
+class LSTNet_v1(nn.Module):
     
     def __init__(self):
-        super(LSTNet, self).__init__()
-        self.num_features = 5
+        super(LSTNet_v1, self).__init__()
+        self.num_features = 6
         self.conv1_out_channels = 32 
         self.conv1_kernel_height = 7
         self.recc1_out_channels = 64 
-        self.skip_steps = [4, 24] 
-        self.skip_reccs_out_channels = [4, 4] 
+        self.skip_steps = [2, 9]  
+        self.skip_reccs_out_channels = [2, 2] 
         self.output_out_features = 1
         self.ar_window_size = 7
         self.dropout = nn.Dropout(p = 0.2)

@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 
-class MarketDataset(Dataset):
+class BaseCOVDataset(Dataset):
     
     def __init__(self, data, history_len):
         self.data = data
@@ -12,8 +12,8 @@ class MarketDataset(Dataset):
         return self.len
     
     def __getitem__(self, index):
-        x_cols = ['Open-N', 'High-N', 'Low-N', 'Close-N', 'Volume-N']
-        y_cols = ['Close-N']
+        x_cols = ['num_cases-N', 'num_diseased-N', 'covid-N', 'anosmia-N', 'tos-N', 'fiebre-N']
+        y_cols = ['num_cases-N']
         x = self.data.iloc[index: index+self.history_len, :][x_cols].values
         y = self.data.iloc[index+self.history_len, :][y_cols].values.astype('float')
         x = torch.tensor(x).float()

@@ -11,17 +11,10 @@ import seaborn as sns
 from datetime import datetime, timedelta
 from tqdm import tqdm
 
-# from main.LSTNet_v1.utils_v1 import related_trends
-# from main.LSTNet_v1.Dataloader_v1 import BaseCOVDataset
-# from main.LSTNet_v1.LSTNet_v1 import LSTNet_v1
-
-from utils_v1 import related_trends
 from Dataloader_v1 import BaseCOVDataset
 from LSTNet_v1 import LSTNet_v1
 
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
 import argparse
@@ -30,49 +23,30 @@ parser.add_argument('--GT_trends', default=None, type=str,
                     help='Define which Google Trends terms to use: all, related_average, or primary (default)')
 parser.add_argument('--batch_size', default=3, type=int,
                     help='Speficy the bath size for the model to train to')
-parser.add_argument('--epochs', default=100, type=int,
-                    help='Speficy the epochs the model to train for')
-parser.add_argument('--learning_rate', default=0.01, type=float,
-                    help='Speficy the learning reate')
+parser.add_argument('--model_load', default='LSTNet_v1_epochs_100', type=str,
+                    help='Define which model to evaluate')
+
 args = parser.parse_args()
 
+
 #--------------------------------------------------------------------------------------------------
-#----------------------------------------- Train functions ----------------------------------------
+#----------------------------------------- Test functions ----------------------------------------
 
-def train(model, dataloader, epochs, optimizer, criterion, device):
-    model.train()
-    train_loss_list = []
-    for epoch in range(epochs):
-        print(f'Epoch {epoch+1} of {epochs}')
-        epoch_loss_train = 0
-        for i, batch in tqdm(enumerate(dataloader, start=1), 
-                            leave=False, desc="Train", total=len(dataloader)):
+def predict(model, dataloader, min_cases, max_cases):
+    model.eval()
+    predictions = None
+    for i, batch in tqdm(enumerate(dataloader, start=1),leave=False, total=len(dataloader)):
                 
-            X, Y = batch
-            optimizer.zero_grad()
-            Y_pred = model(X)
-            loss = criterion(Y_pred, Y)
-            loss.backward()
-            optimizer.step()
-
-            with open(os.path.join(main_path,'main','LSTNet_v1','Log/Running-Loss.txt'), 'a+') as file:
-                file.write(f'{loss.item()}\n')
-            epoch_loss_train += loss.item()
-            
-        epoch_loss_train = epoch_loss_train / len(dataloader)
-        train_loss_list.append(epoch_loss_train)
-        
-        with open(os.path.join(main_path,'main','LSTNet_v1','Log/Epoch-Loss.txt'), 'a+') as file:
-            file.write(f'{epoch_loss_train}\n')
-
-        print('Train loss: {:.3f}'.format(epoch_loss_train))
-
-    # Save model
-    model_name = f'LSTNet_v1_epochs_{epochs}.pth'
-    save_path  = os.path.join(main_path,'main','LSTNet_v1','Models',model_name)
-    torch.save(model.state_dict(), save_path)
-
-    return train_loss_list
+        X, Y = batch
+        Y_pred = model(X).detach().numpy()
+        if i == 1:
+            predictions = Y_pred
+        else:
+            predictions = np.concatenate((predictions, Y_pred), axis=0)
+    predictions = predictions*(max_cases-min_cases)+min_cases
+    columns = ['forecast_cases']
+    df_predictions = pd.DataFrame(predictions, columns=columns)
+    return df_predictions
 
 #--------------------------------------------------------------------------------------------------
 #----------------------------------------- Data paths ---------------------------------------------
@@ -138,53 +112,62 @@ print(f'Data from {start_dt} to {end_dt}')
 
 
 #--------------------------------------------------------------------------------------------------
-#--------------------------------------- Train dataset --------------------------------------------
+#----------------------------------------- Load model ----------------------------------------------
 
-data_input = data_all.drop(columns=['num_cases','num_diseased'], axis=1)
-train_end_time = datetime.strptime('2021-03-28','%Y-%m-%d')  # train until last 14 days
-train_data = data_input[data_input['date_time'] < train_end_time].copy()
-
-## Min-Max Normalization
-min_cases = train_data['num_cases_7dRA'].min() ; max_cases = train_data['num_cases_7dRA'].max()
-min_diseased = train_data['num_diseased_7dRA'].min() ; max_diseased = train_data['num_diseased_7dRA'].max()
-min_anosmia = train_data['anosmia'].min() ; max_anosmia = train_data['anosmia'].max()
-min_tos = train_data['tos'].min() ; max_tos = train_data['tos'].max()
-min_fiebre = train_data['fiebre'].min() ; max_fiebre = train_data['fiebre'].max()
-min_covid = train_data['covid'].min() ; max_covid = train_data['covid'].max()
-
-train_data.loc[:,'num_cases-N'] = (train_data['num_cases_7dRA']-min_cases)/(max_cases-min_cases)
-train_data.loc[:,'num_diseased-N'] = (train_data['num_diseased_7dRA']-min_diseased)/(max_diseased-min_diseased)
-train_data.loc[:,'anosmia-N'] = (train_data['anosmia']-min_anosmia)/(max_anosmia-min_anosmia)
-train_data.loc[:,'tos-N'] = (train_data['tos']-min_tos)/(max_tos-min_tos)
-train_data.loc[:,'fiebre-N'] = (train_data['fiebre']-min_fiebre)/(max_fiebre-min_fiebre)
-train_data.loc[:,'covid-N'] = (train_data['covid']-min_covid)/(max_covid-min_covid)
-
-## Create DataLoader
-train_dataset = BaseCOVDataset(train_data, history_len=18)
-train_data_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+model_path = os.path.join(main_path,'main','LSTNet_v1','Models','{}.pth'.format(args.model_load))
+model = LSTNet_v1()
+model.load_state_dict(torch.load(model_path))
 
 #--------------------------------------------------------------------------------------------------
-#--------------------------------------- Training model -------------------------------------------
+#--------------------------------------- Test dataset --------------------------------------------
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = LSTNet_v1()
-# model = model.to(device)
+data_input = data_all.drop(columns=['num_cases','num_diseased'], axis=1)
+## Min-Max Normalization
+min_cases = data_input['num_cases_7dRA'].min() ; max_cases = data_input['num_cases_7dRA'].max()
+min_diseased = data_input['num_diseased_7dRA'].min() ; max_diseased = data_input['num_diseased_7dRA'].max()
+min_anosmia = data_input['anosmia'].min() ; max_anosmia = data_input['anosmia'].max()
+min_tos = data_input['tos'].min() ; max_tos = data_input['tos'].max()
+min_fiebre = data_input['fiebre'].min() ; max_fiebre = data_input['fiebre'].max()
+min_covid = data_input['covid'].min() ; max_covid = data_input['covid'].max()
 
-epochs = args.epochs
-lr = args.learning_rate
-weight_decay = 0.01
+data_input.loc[:,'num_cases-N'] = (data_input['num_cases_7dRA']-min_cases)/(max_cases-min_cases)
+data_input.loc[:,'num_diseased-N'] = (data_input['num_diseased_7dRA']-min_diseased)/(max_diseased-min_diseased)
+data_input.loc[:,'anosmia-N'] = (data_input['anosmia']-min_anosmia)/(max_anosmia-min_anosmia)
+data_input.loc[:,'tos-N'] = (data_input['tos']-min_tos)/(max_tos-min_tos)
+data_input.loc[:,'fiebre-N'] = (data_input['fiebre']-min_fiebre)/(max_fiebre-min_fiebre)
+data_input.loc[:,'covid-N'] = (data_input['covid']-min_covid)/(max_covid-min_covid)
 
-criterion = nn.MSELoss()
-optimizer = optim.Adadelta(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-print('\nTraining model...')
-train_loss = train(model,train_data_loader, epochs, optimizer, criterion, device)
-joblib.dump(train_loss, os.path.join(main_path,'main','LSTNet_v1','Log',f'Training_Loss_epochs_{epochs}.pkl'))
+dataset = BaseCOVDataset(data_input, history_len=18)
+data_loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
 
-# loss plots
-plt.figure(figsize=(10, 7))
-plt.plot(train_loss, color='b', label='train loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
+
+#--------------------------------------------------------------------------------------------------
+#----------------------------------------- Test model ---------------------------------------------
+
+pred_forecast = predict(model, data_loader, min_cases, max_cases)
+
+pred_forecast['date_time'] = pd.Series(pred_forecast.index).apply(lambda x: \
+                                    data_all['date_time'][x+18])
+pred_forecast = pred_forecast[['date_time','forecast_cases']]
+
+#--------------------------------------------------------------------------------------------------
+#-------------------------------------- Viz predictions -------------------------------------------
+
+time_mask = datetime.strptime('2021-03-28','%Y-%m-%d')
+data_mask = data_input['date_time'] >= time_mask
+actual_data = data_input[data_mask].copy()
+pred_mask = pred_forecast['date_time'] >= time_mask
+predict_data = pred_forecast[pred_mask].copy()
+
+# Plot
+fig, ax = plt.subplots(1,1,figsize=(10,7))
+ax.plot(actual_data['date_time'],actual_data['num_cases_7dRA'], color='k', label='Actual')
+ax.plot(predict_data['date_time'],predict_data['forecast_cases'], color='r', label='Predicted')
+ax.legend(loc='best', fontsize=15)
+ax.set_xlabel('Days', fontsize=18)
+ax.set_ylabel('Number of cases', fontsize=18)
 plt.savefig(os.path.join(main_path,'main','LSTNet_v1','Log','Figures',
-                                f'Training_Loss_epochs_{epochs}.png'))
+                                f'Predictions_{args.model_load}.png'))
+
+print('end')
