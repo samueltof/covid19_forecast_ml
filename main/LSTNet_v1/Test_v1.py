@@ -157,8 +157,19 @@ pred_forecast = pred_forecast[['date_time','forecast_cases']]
 time_mask = datetime.strptime('2021-03-28','%Y-%m-%d')
 data_mask = data_input['date_time'] >= time_mask
 actual_data = data_input[data_mask].copy()
+actual_data['date_time'] = pd.to_datetime(actual_data['date_time'], format='%Y-%m-%d')
 pred_mask = pred_forecast['date_time'] >= time_mask
 predict_data = pred_forecast[pred_mask].copy()
+predict_data['date_time'] = pd.to_datetime(predict_data['date_time'], format='%Y-%m-%d')
+
+# Calculate MSE
+true_arr = np.array(actual_data['num_cases_7dRA'].tolist())
+pred_arr = np.array(predict_data['forecast_cases'].tolist())
+difference_array = np.subtract(true_arr, pred_arr)
+squared_array = np.square(difference_array)
+mse = squared_array.mean()
+
+print('MSE: ' + str(mse))
 
 # Plot
 fig, ax = plt.subplots(1,1,figsize=(10,7))

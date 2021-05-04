@@ -39,7 +39,7 @@ args = parser.parse_args()
 #--------------------------------------------------------------------------------------------------
 #----------------------------------------- Train functions ----------------------------------------
 
-def train(model, dataloader, epochs, optimizer, criterion, device):
+def train(model, dataloader, epochs, optimizer, criterion, savename, device):
     model.train()
     train_loss_list = []
     for epoch in range(epochs):
@@ -68,7 +68,7 @@ def train(model, dataloader, epochs, optimizer, criterion, device):
         print('Train loss: {:.3f}'.format(epoch_loss_train))
 
     # Save model
-    model_name = f'LSTNet_v1_epochs_{epochs}.pth'
+    model_name = f'LSTNet_v1_epochs_{epochs}_{savename}.pth'
     save_path  = os.path.join(main_path,'main','LSTNet_v1','Models',model_name)
     torch.save(model.state_dict(), save_path)
 
@@ -174,12 +174,13 @@ epochs = args.epochs
 lr = args.learning_rate
 weight_decay = 0.01
 
-criterion = nn.MSELoss()
+criterion = nn.MSELoss() ; savename = 'MSE'
+# criterion = nn.L1Loss() ; savename = 'L1'
 optimizer = optim.Adadelta(model.parameters(), lr=lr, weight_decay=weight_decay)
 
 print('\nTraining model...')
-train_loss = train(model,train_data_loader, epochs, optimizer, criterion, device)
-joblib.dump(train_loss, os.path.join(main_path,'main','LSTNet_v1','Log',f'Training_Loss_epochs_{epochs}.pkl'))
+train_loss = train(model,train_data_loader, epochs, optimizer, criterion, savename, device)
+joblib.dump(train_loss, os.path.join(main_path,'main','LSTNet_v1','Log',f'Training_Loss_epochs_{epochs}_{savename}.pkl'))
 
 # loss plots
 plt.figure(figsize=(10, 7))
@@ -187,4 +188,4 @@ plt.plot(train_loss, color='b', label='train loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.savefig(os.path.join(main_path,'main','LSTNet_v1','Log','Figures',
-                                f'Training_Loss_epochs_{epochs}.png'))
+                                f'Training_Loss_epochs_{epochs}_{savename}.png'))
