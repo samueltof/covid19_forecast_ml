@@ -23,7 +23,7 @@ parser.add_argument('--GT_trends', default=None, type=str,
                     help='Define which Google Trends terms to use: all, related_average, or primary (default)')
 parser.add_argument('--batch_size', default=3, type=int,
                     help='Speficy the bath size for the model to train to')
-parser.add_argument('--model_load', default='LSTNet_v1_epochs_100', type=str,
+parser.add_argument('--model_load', default='LSTNet_v1_epochs_100_MSE', type=str,
                     help='Define which model to evaluate')
 
 args = parser.parse_args()
@@ -76,6 +76,7 @@ data_movement_change = data_movement_change.loc[11001].sort_values(by='date_time
 # Smooth data 
 data_movement_change['movement_change_7dRA'] = data_movement_change['movement_change'].rolling(window=7).mean()
 #data_movement_change['movement_change_7dRA'].iloc[:6] = data_movement_change['movement_change'].iloc[:6]
+data_movement_change = data_movement_change[data_movement_change['date_time'] <= datetime.strptime('2021-04-10','%Y-%m-%d')]
 data_movement_change = data_movement_change.reset_index() ; data_movement_change = data_movement_change.set_index('date_time')
 data_movement_change = data_movement_change.drop('poly_id', axis=1)
 
@@ -97,8 +98,8 @@ data_GT = data_GT.set_index('date_time')
 data_GT = data_GT.rolling(window=7).mean()
 
 ### Concatenate all data
-# data_all = pd.concat([data_cases, data_movement_change, data_GT])
-data_all = pd.concat([data_cases, data_GT])
+data_all = pd.concat([data_cases, data_movement_change, data_GT])
+# data_all = pd.concat([data_cases, data_GT])
 data_all = data_all.reset_index()
 data_all = data_all.sort_values(by=['date_time'])
 data_all = data_all.groupby('date_time').first().reset_index()
@@ -125,6 +126,7 @@ data_input = data_all.drop(columns=['num_cases','num_diseased'], axis=1)
 ## Min-Max Normalization
 min_cases = data_input['num_cases_7dRA'].min() ; max_cases = data_input['num_cases_7dRA'].max()
 min_diseased = data_input['num_diseased_7dRA'].min() ; max_diseased = data_input['num_diseased_7dRA'].max()
+min_movement = data_input['movement_change_7dRA'].min() ; max_movement = data_input['movement_change_7dRA'].max()
 min_anosmia = data_input['anosmia'].min() ; max_anosmia = data_input['anosmia'].max()
 min_tos = data_input['tos'].min() ; max_tos = data_input['tos'].max()
 min_fiebre = data_input['fiebre'].min() ; max_fiebre = data_input['fiebre'].max()
@@ -132,10 +134,12 @@ min_covid = data_input['covid'].min() ; max_covid = data_input['covid'].max()
 
 data_input.loc[:,'num_cases-N'] = (data_input['num_cases_7dRA']-min_cases)/(max_cases-min_cases)
 data_input.loc[:,'num_diseased-N'] = (data_input['num_diseased_7dRA']-min_diseased)/(max_diseased-min_diseased)
+data_input.loc[:,'movement-N'] = (data_input['movement_change_7dRA']-min_movement)/(max_movement-min_movement)
 data_input.loc[:,'anosmia-N'] = (data_input['anosmia']-min_anosmia)/(max_anosmia-min_anosmia)
 data_input.loc[:,'tos-N'] = (data_input['tos']-min_tos)/(max_tos-min_tos)
 data_input.loc[:,'fiebre-N'] = (data_input['fiebre']-min_fiebre)/(max_fiebre-min_fiebre)
 data_input.loc[:,'covid-N'] = (data_input['covid']-min_covid)/(max_covid-min_covid)
+
 
 
 dataset = BaseCOVDataset(data_input, history_len=18)

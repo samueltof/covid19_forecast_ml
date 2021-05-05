@@ -25,6 +25,7 @@ def _fetch_data(trendreq, kw_list, timeframe='today 3-m', cat=0, geo='', gprop='
             fetched = True
     return trendreq.interest_over_time()
 
+
 def get_daily_trend(trendreq, keyword:str, start:str, end:str, cat=0, 
                     geo='', gprop='', delta=269, overlap=100, sleep=0, 
                     tz=0, verbose=False) ->pd.DataFrame:
@@ -137,3 +138,36 @@ def get_daily_trend(trendreq, keyword:str, start:str, end:str, cat=0,
     df[keyword] = (100*df[keyword]/df[keyword].max()).round(decimals=0)
     
     return df
+
+
+def get_trends(geo, start, end, search_terms_list, cat=0, gprop=''):
+    pytrend = TrendReq()    # Connect to Google
+    df_trends = []
+    not_found = []
+    for trend in search_terms_list:
+        try:
+            get_trend = get_daily_trend(pytrend,
+                                        trend,
+                                        start,
+                                        end,
+                                        geo=geo,
+                                        cat=cat,
+                                        gprop=gprop,
+                                        verbose=False)
+            get_trend = get_trend.reset_index()
+            get_trend = get_trend.drop('overlap',axis=1)
+            get_trend = get_trend.rename(columns={'index':'date_time'})
+            get_trend['date_time'] = pd.to_datetime(get_trend['date_time'])
+            get_trend = get_trend.set_index('date_time')
+            df_trends.append(get_trend)
+        except KeyError:
+            not_found.append(trend)
+            continue
+
+    df_trends = pd.concat(df_trends)
+    df_trends = df_trends.reset_index(); df_trends = df_trends.sort_values(by=['date_time'])
+    df_trends = df_trends.groupby('date_time').first()
+    df_not_found = pd.DataFrame()
+    df_not_found['not_found_trends'] = not_found
+
+    return df_trends, df_not_found

@@ -78,7 +78,7 @@ def train(model, dataloader, epochs, optimizer, criterion, savename, device):
 #----------------------------------------- Data paths ---------------------------------------------
 
 data_cases_path = os.path.join('data','cases.csv')
-data_movement_change_path = os.path.join('data','movement_range.csv')
+data_movement_change_path = os.path.join('data','Movement','movement_range_colombian_cities.csv')
 data_GT_path = os.path.join('data','Google_Trends','trends_BOG.csv')
 data_GT_id_terms_path = os.path.join('data','Google_Trends','terms_id_ES.csv')
 data_GT_search_terms_path = os.path.join('data','Google_Trends','search_terms_ES.csv')
@@ -102,6 +102,7 @@ data_movement_change = data_movement_change.loc[11001].sort_values(by='date_time
 # Smooth data 
 data_movement_change['movement_change_7dRA'] = data_movement_change['movement_change'].rolling(window=7).mean()
 #data_movement_change['movement_change_7dRA'].iloc[:6] = data_movement_change['movement_change'].iloc[:6]
+data_movement_change = data_movement_change[data_movement_change['date_time'] <= datetime.strptime('2021-04-10','%Y-%m-%d')]
 data_movement_change = data_movement_change.reset_index() ; data_movement_change = data_movement_change.set_index('date_time')
 data_movement_change = data_movement_change.drop('poly_id', axis=1)
 
@@ -123,8 +124,8 @@ data_GT = data_GT.set_index('date_time')
 data_GT = data_GT.rolling(window=7).mean()
 
 ### Concatenate all data
-# data_all = pd.concat([data_cases, data_movement_change, data_GT])
-data_all = pd.concat([data_cases, data_GT])
+data_all = pd.concat([data_cases, data_movement_change, data_GT])
+# data_all = pd.concat([data_cases, data_GT])
 data_all = data_all.reset_index()
 data_all = data_all.sort_values(by=['date_time'])
 data_all = data_all.groupby('date_time').first().reset_index()
@@ -147,6 +148,7 @@ train_data = data_input[data_input['date_time'] < train_end_time].copy()
 ## Min-Max Normalization
 min_cases = train_data['num_cases_7dRA'].min() ; max_cases = train_data['num_cases_7dRA'].max()
 min_diseased = train_data['num_diseased_7dRA'].min() ; max_diseased = train_data['num_diseased_7dRA'].max()
+min_movement = train_data['movement_change_7dRA'].min() ; max_movement = train_data['movement_change_7dRA'].max()
 min_anosmia = train_data['anosmia'].min() ; max_anosmia = train_data['anosmia'].max()
 min_tos = train_data['tos'].min() ; max_tos = train_data['tos'].max()
 min_fiebre = train_data['fiebre'].min() ; max_fiebre = train_data['fiebre'].max()
@@ -154,6 +156,7 @@ min_covid = train_data['covid'].min() ; max_covid = train_data['covid'].max()
 
 train_data.loc[:,'num_cases-N'] = (train_data['num_cases_7dRA']-min_cases)/(max_cases-min_cases)
 train_data.loc[:,'num_diseased-N'] = (train_data['num_diseased_7dRA']-min_diseased)/(max_diseased-min_diseased)
+train_data.loc[:,'movement-N'] = (train_data['movement_change_7dRA']-min_movement)/(max_movement-min_movement)
 train_data.loc[:,'anosmia-N'] = (train_data['anosmia']-min_anosmia)/(max_anosmia-min_anosmia)
 train_data.loc[:,'tos-N'] = (train_data['tos']-min_tos)/(max_tos-min_tos)
 train_data.loc[:,'fiebre-N'] = (train_data['fiebre']-min_fiebre)/(max_fiebre-min_fiebre)

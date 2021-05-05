@@ -8,7 +8,7 @@ class LSTNet_v1(nn.Module):
     
     def __init__(self):
         super(LSTNet_v1, self).__init__()
-        self.num_features = 6
+        self.num_features = 7
         self.conv1_out_channels = 32 
         self.conv1_kernel_height = 7
         self.recc1_out_channels = 64 
