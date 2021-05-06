@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, date, time
+from tqdm import tqdm
 import pandas as pd
 import time
 
@@ -144,7 +145,7 @@ def get_trends(geo, start, end, search_terms_list, cat=0, gprop=''):
     pytrend = TrendReq()    # Connect to Google
     df_trends = []
     not_found = []
-    for trend in search_terms_list:
+    for trend in tqdm(search_terms_list, total=len(search_terms_list)):
         try:
             get_trend = get_daily_trend(pytrend,
                                         trend,
