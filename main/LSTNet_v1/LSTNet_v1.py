@@ -4,11 +4,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class LSTNet_v2(nn.Module):
+class LSTNet_v1(nn.Module):
     
     def __init__(self):
-        super(LSTNet_v2, self).__init__()
-        self.num_features = 8
+        super(LSTNet_v1, self).__init__()
+        self.num_features = 6
         self.conv1_out_channels = 32 
         self.conv1_kernel_height = 7
         self.recc1_out_channels = 64 

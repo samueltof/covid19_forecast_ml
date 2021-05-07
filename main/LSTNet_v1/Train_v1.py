@@ -15,9 +15,9 @@ from tqdm import tqdm
 # from main.LSTNet_v1.Dataloader_v1 import BaseCOVDataset
 # from main.LSTNet_v1.LSTNet_v1 import LSTNet_v1
 
-from utils_v2 import related_trends
-from Dataloader_v2 import BaseCOVDataset
-from LSTNet_v2 import LSTNet_v2
+from utils_v1 import related_trends
+from Dataloader_v1 import BaseCOVDataset
+from LSTNet_v1 import LSTNet_v1
 
 import torch
 import torch.nn as nn
@@ -55,21 +55,21 @@ def train(model, dataloader, epochs, optimizer, criterion, savename, device):
             loss.backward()
             optimizer.step()
 
-            with open(os.path.join(main_path,'main','LSTNet_v2','Log/Running-Loss.txt'), 'a+') as file:
+            with open(os.path.join(main_path,'main','LSTNet_v1','Log/Running-Loss.txt'), 'a+') as file:
                 file.write(f'{loss.item()}\n')
             epoch_loss_train += loss.item()
             
         epoch_loss_train = epoch_loss_train / len(dataloader)
         train_loss_list.append(epoch_loss_train)
         
-        with open(os.path.join(main_path,'main','LSTNet_v2','Log/Epoch-Loss.txt'), 'a+') as file:
+        with open(os.path.join(main_path,'main','LSTNet_v1','Log/Epoch-Loss.txt'), 'a+') as file:
             file.write(f'{epoch_loss_train}\n')
 
         print('Train loss: {:.3f}'.format(epoch_loss_train))
 
     # Save model
-    model_name = f'LSTNet_v2_epochs_{epochs}_{savename}.pth'
-    save_path  = os.path.join(main_path,'main','LSTNet_v2','Models',model_name)
+    model_name = f'LSTNet_v1_epochs_{epochs}_{savename}.pth'
+    save_path  = os.path.join(main_path,'main','LSTNet_v1','Models',model_name)
     torch.save(model.state_dict(), save_path)
 
     return train_loss_list
@@ -109,7 +109,7 @@ data_movement_change = data_movement_change.drop('poly_id', axis=1)
 
 ### Load Google Trends data for Bogota
 if args.GT_trends == None:
-    data_GT = pd.read_csv(data_GT_path, usecols=['date_time','anosmia','fiebre','covid','neumonia','sintomas covid'])
+    data_GT = pd.read_csv(data_GT_path, usecols=['date_time','anosmia','fiebre','covid'])
 elif args.GT_trends == 'all':
     data_GT = pd.read_csv(data_GT_path)
     data_GT = data_GT.drop('Unnamed: 0', axis=1)
@@ -151,8 +151,7 @@ min_cases = train_data['num_cases_7dRA'].min() ; max_cases = train_data['num_cas
 min_diseased = train_data['num_diseased_7dRA'].min() ; max_diseased = train_data['num_diseased_7dRA'].max()
 min_movement = train_data['movement_change_7dRA'].min() ; max_movement = train_data['movement_change_7dRA'].max()
 min_anosmia = train_data['anosmia'].min() ; max_anosmia = train_data['anosmia'].max()
-min_neumonia = train_data['neumonia'].min() ; max_neumonia = train_data['neumonia'].max()
-min_sintomas = train_data['sintomas covid'].min() ; max_sintomas = train_data['sintomas covid'].max()
+# min_tos = train_data['tos'].min() ; max_tos = train_data['tos'].max()
 min_fiebre = train_data['fiebre'].min() ; max_fiebre = train_data['fiebre'].max()
 min_covid = train_data['covid'].min() ; max_covid = train_data['covid'].max()
 
@@ -160,8 +159,7 @@ train_data.loc[:,'num_cases-N'] = (train_data['num_cases_7dRA']-min_cases)/(max_
 train_data.loc[:,'num_diseased-N'] = (train_data['num_diseased_7dRA']-min_diseased)/(max_diseased-min_diseased)
 train_data.loc[:,'movement-N'] = (train_data['movement_change_7dRA']-min_movement)/(max_movement-min_movement)
 train_data.loc[:,'anosmia-N'] = (train_data['anosmia']-min_anosmia)/(max_anosmia-min_anosmia)
-train_data.loc[:,'neumonia-N'] = (train_data['neumonia']-min_neumonia)/(max_neumonia-min_neumonia)
-train_data.loc[:,'sintomas_covid-N'] = (train_data['sintomas covid']-min_neumonia)/(max_neumonia-min_neumonia)
+# # # train_data.loc[:,'tos-N'] = (train_data['tos']-min_tos)/(max_tos-min_tos)
 train_data.loc[:,'fiebre-N'] = (train_data['fiebre']-min_fiebre)/(max_fiebre-min_fiebre)
 train_data.loc[:,'covid-N'] = (train_data['covid']-min_covid)/(max_covid-min_covid)
 
@@ -173,7 +171,7 @@ train_data_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffl
 #--------------------------------------- Training model -------------------------------------------
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = LSTNet_v2()
+model = LSTNet_v1()
 # model = model.to(device)
 
 epochs = args.epochs
@@ -186,12 +184,12 @@ optimizer = optim.Adadelta(model.parameters(), lr=lr, weight_decay=weight_decay)
 
 print('\nTraining model...')
 train_loss = train(model,train_data_loader, epochs, optimizer, criterion, savename, device)
-joblib.dump(train_loss, os.path.join(main_path,'main','LSTNet_v2','Log',f'Training_Loss_epochs_{epochs}_{savename}.pkl'))
+joblib.dump(train_loss, os.path.join(main_path,'main','LSTNet_v1','Log',f'Training_Loss_epochs_{epochs}_{savename}.pkl'))
 
 # loss plots
 plt.figure(figsize=(10, 7))
 plt.plot(train_loss, color='b', label='train loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
-plt.savefig(os.path.join(main_path,'main','LSTNet_v2','Log','Figures',
+plt.savefig(os.path.join(main_path,'main','LSTNet_v1','Log','Figures',
                                 f'Training_Loss_epochs_{epochs}_{savename}.png'))

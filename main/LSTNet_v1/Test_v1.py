@@ -11,8 +11,8 @@ import seaborn as sns
 from datetime import datetime, timedelta
 from tqdm import tqdm
 
-from Dataloader_v2 import BaseCOVDataset
-from LSTNet_v2 import LSTNet_v2
+from Dataloader_v1 import BaseCOVDataset
+from LSTNet_v1 import LSTNet_v1
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -23,7 +23,7 @@ parser.add_argument('--GT_trends', default=None, type=str,
                     help='Define which Google Trends terms to use: all, related_average, or primary (default)')
 parser.add_argument('--batch_size', default=3, type=int,
                     help='Speficy the bath size for the model to train to')
-parser.add_argument('--model_load', default='LSTNet_v2_epochs_100_MSE', type=str,
+parser.add_argument('--model_load', default='LSTNet_v1_epochs_100_MSE', type=str,
                     help='Define which model to evaluate')
 
 args = parser.parse_args()
@@ -83,7 +83,7 @@ data_movement_change = data_movement_change.drop('poly_id', axis=1)
 
 ### Load Google Trends data for Bogota
 if args.GT_trends == None:
-    data_GT = pd.read_csv(data_GT_path, usecols=['date_time','anosmia','fiebre','covid','neumonia','sintomas covid'])
+    data_GT = pd.read_csv(data_GT_path, usecols=['date_time','anosmia','fiebre','covid'])
 elif args.GT_trends == 'all':
     data_GT = pd.read_csv(data_GT_path)
     data_GT = data_GT.drop('Unnamed: 0', axis=1)
@@ -117,8 +117,8 @@ print(f'Data from {start_dt} to {end_dt}')
 #--------------------------------------------------------------------------------------------------
 #----------------------------------------- Load model ----------------------------------------------
 
-model_path = os.path.join(main_path,'main','LSTNet_v2','Models','{}.pth'.format(args.model_load))
-model = LSTNet_v2()
+model_path = os.path.join(main_path,'main','LSTNet_v1','Models','{}.pth'.format(args.model_load))
+model = LSTNet_v1()
 model.load_state_dict(torch.load(model_path))
 
 #--------------------------------------------------------------------------------------------------
@@ -130,8 +130,7 @@ min_cases = data_input['num_cases_7dRA'].min() ; max_cases = data_input['num_cas
 min_diseased = data_input['num_diseased_7dRA'].min() ; max_diseased = data_input['num_diseased_7dRA'].max()
 min_movement = data_input['movement_change_7dRA'].min() ; max_movement = data_input['movement_change_7dRA'].max()
 min_anosmia = data_input['anosmia'].min() ; max_anosmia = data_input['anosmia'].max()
-min_neumonia = data_input['neumonia'].min() ; max_neumonia = data_input['neumonia'].max()
-min_sintomas = data_input['sintomas covid'].min() ; max_sintomas = data_input['sintomas covid'].max()
+# min_tos = data_input['tos'].min() ; max_tos = data_input['tos'].max()
 min_fiebre = data_input['fiebre'].min() ; max_fiebre = data_input['fiebre'].max()
 min_covid = data_input['covid'].min() ; max_covid = data_input['covid'].max()
 
@@ -139,8 +138,7 @@ data_input.loc[:,'num_cases-N'] = (data_input['num_cases_7dRA']-min_cases)/(max_
 data_input.loc[:,'num_diseased-N'] = (data_input['num_diseased_7dRA']-min_diseased)/(max_diseased-min_diseased)
 data_input.loc[:,'movement-N'] = (data_input['movement_change_7dRA']-min_movement)/(max_movement-min_movement)
 data_input.loc[:,'anosmia-N'] = (data_input['anosmia']-min_anosmia)/(max_anosmia-min_anosmia)
-data_input.loc[:,'neumonia-N'] = (data_input['neumonia']-min_neumonia)/(max_neumonia-min_neumonia)
-data_input.loc[:,'sintomas_covid-N'] = (data_input['sintomas covid']-min_neumonia)/(max_neumonia-min_neumonia)
+# # data_input.loc[:,'tos-N'] = (data_input['tos']-min_tos)/(max_tos-min_tos)
 data_input.loc[:,'fiebre-N'] = (data_input['fiebre']-min_fiebre)/(max_fiebre-min_fiebre)
 data_input.loc[:,'covid-N'] = (data_input['covid']-min_covid)/(max_covid-min_covid)
 
@@ -152,35 +150,48 @@ data_loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
 
 #--------------------------------------------------------------------------------------------------
 #----------------------------------------- Test model ---------------------------------------------
-
-pred_forecast = predict(model, data_loader, min_cases, max_cases)
-
-pred_forecast['date_time'] = pd.Series(pred_forecast.index).apply(lambda x: \
-                                    data_all['date_time'][x+18])
-pred_forecast = pred_forecast[['date_time','forecast_cases']]
-
-#--------------------------------------------------------------------------------------------------
-#-------------------------------------- Viz predictions -------------------------------------------
+def mean_absolute_percentage_error(y_true, y_pred): 
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
 time_mask = datetime.strptime('2021-04-04','%Y-%m-%d')
 data_mask = data_input['date_time'] >= time_mask
 actual_data = data_input[data_mask].copy()
 actual_data['date_time'] = pd.to_datetime(actual_data['date_time'], format='%Y-%m-%d')
-pred_mask = pred_forecast['date_time'] >= time_mask
-predict_data = pred_forecast[pred_mask].copy()
-predict_data['date_time'] = pd.to_datetime(predict_data['date_time'], format='%Y-%m-%d')
 
-# Calculate MSE
-true_arr = np.array(actual_data['num_cases_7dRA'].tolist())
-pred_arr = np.array(predict_data['forecast_cases'].tolist())
-difference_array = np.subtract(true_arr, pred_arr)
-squared_array = np.square(difference_array)
-mse = squared_array.mean()
+NRUNS = 50
+df_preds = []
+for i in range(NRUNS):
 
-print('MSE: ' + str(mse))
+    pred_forecast = predict(model, data_loader, min_cases, max_cases)
+
+    pred_forecast['date_time'] = pd.Series(pred_forecast.index).apply(lambda x: \
+                                        data_all['date_time'][x+18])
+    pred_forecast = pred_forecast[['date_time','forecast_cases']]
+
+    #--------------------------------------------------------------------------------------------------
+    #-------------------------------------- Save predictions -------------------------------------------
+
+    pred_mask = pred_forecast['date_time'] >= time_mask
+    predict_data = pred_forecast[pred_mask].copy()
+    predict_data['date_time'] = pd.to_datetime(predict_data['date_time'], format='%Y-%m-%d')
+
+    # Calculate MSE
+    true_arr = np.array(actual_data['num_cases_7dRA'].tolist())
+    pred_arr = np.array(predict_data['forecast_cases'].tolist())
+    mape = mean_absolute_percentage_error(true_arr,pred_arr)
+    print('MAPE: ' + str(mape))
+
+    # Save
+    predict_data['run'] = ['run_{}'.format(i)]*len(predict_data)
+    predict_data['MAPE'] = [mape]*len(predict_data)
+    df_preds.append(predict_data)
+
+df_preds = pd.concat(df_preds)
+
+
 
 # Plot
-
 data_plot = data_input[data_input['date_time'] >  datetime.strptime('2021-01-01','%Y-%m-%d')]
 
 plt.rc('grid', color='w', linestyle='solid')
@@ -190,7 +201,7 @@ ax.plot(predict_data['date_time'],predict_data['forecast_cases'], color='darkora
 ax.legend(loc='best', fontsize=15)
 ax.set_xlabel('Days', fontsize=18)
 ax.set_ylabel('Number of cases', fontsize=18)
-plt.savefig(os.path.join(main_path,'main','LSTNet_v2','Log','Figures',
+plt.savefig(os.path.join(main_path,'main','LSTNet_v1','Log','Figures',
                                 f'Predictions_{args.model_load}.png'))
 
 print('end')
