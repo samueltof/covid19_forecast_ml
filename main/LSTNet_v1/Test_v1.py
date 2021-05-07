@@ -51,8 +51,8 @@ def predict(model, dataloader, min_cases, max_cases):
 #--------------------------------------------------------------------------------------------------
 #----------------------------------------- Data paths ---------------------------------------------
 
-data_cases_path = os.path.join('data','cases.csv')
-data_movement_change_path = os.path.join('data','movement_range.csv')
+data_cases_path = os.path.join('data','cases_localidades.csv')
+data_movement_change_path = os.path.join('data','Movement','movement_range_colombian_cities.csv')
 data_GT_path = os.path.join('data','Google_Trends','trends_BOG.csv')
 data_GT_id_terms_path = os.path.join('data','Google_Trends','terms_id_ES.csv')
 data_GT_search_terms_path = os.path.join('data','Google_Trends','search_terms_ES.csv')
@@ -62,10 +62,10 @@ data_GT_search_terms_path = os.path.join('data','Google_Trends','search_terms_ES
 
 ### Load confirmed cases for Bogota
 data_cases = pd.read_csv(data_cases_path, usecols=['date_time','location','num_cases','num_diseased'])
-data_cases = data_cases.query(" location == 'Bogotá D.C.-Bogotá d C.' ")
-data_cases = data_cases.drop('location', axis=1)
 data_cases['date_time'] = pd.to_datetime(data_cases['date_time'], format='%Y-%m-%d')    # converted to datetime
-data_cases = data_cases.set_index('date_time')
+# data_cases = data_cases[data_cases['date_time'] <= date_th]
+last_cases_conf_date = data_cases['date_time'].iloc[-1]
+data_cases = data_cases.groupby('date_time').sum()
 # Smooth data
 data_cases['num_cases_7dRA']    = data_cases['num_cases'].rolling(window=7).mean()
 data_cases['num_diseased_7dRA'] = data_cases['num_diseased'].rolling(window=7).mean()
@@ -76,13 +76,14 @@ data_movement_change = data_movement_change.loc[11001].sort_values(by='date_time
 # Smooth data 
 data_movement_change['movement_change_7dRA'] = data_movement_change['movement_change'].rolling(window=7).mean()
 #data_movement_change['movement_change_7dRA'].iloc[:6] = data_movement_change['movement_change'].iloc[:6]
-data_movement_change = data_movement_change[data_movement_change['date_time'] <= datetime.strptime('2021-04-10','%Y-%m-%d')]
+data_movement_change = data_movement_change[data_movement_change['date_time'] <= last_cases_conf_date]
 data_movement_change = data_movement_change.reset_index() ; data_movement_change = data_movement_change.set_index('date_time')
 data_movement_change = data_movement_change.drop('poly_id', axis=1)
 
+
 ### Load Google Trends data for Bogota
 if args.GT_trends == None:
-    data_GT = pd.read_csv(data_GT_path, usecols=['date','anosmia','tos','fiebre','covid'])
+    data_GT = pd.read_csv(data_GT_path, usecols=['date_time','anosmia','fiebre','covid'])
 elif args.GT_trends == 'all':
     data_GT = pd.read_csv(data_GT_path)
     data_GT = data_GT.drop('Unnamed: 0', axis=1)
@@ -92,8 +93,8 @@ elif args.GT_trends == 'all':
 #     data_search_terms = pd.read_csv(data_GT_search_terms_path)
 #     data_GT = pd.read_csv(data_GT_path)
 #     data_GT = related_trends(data_search_terms, data_main_terms, data_GT, r_select)
-data_GT = data_GT.rename(columns={'date':'date_time'})
 data_GT['date_time'] = pd.to_datetime(data_GT['date_time'], format='%Y-%m-%d')
+data_GT = data_GT[data_GT['date_time'] <= last_cases_conf_date]
 data_GT = data_GT.set_index('date_time')
 data_GT = data_GT.rolling(window=7).mean()
 
@@ -128,7 +129,7 @@ min_cases = data_input['num_cases_7dRA'].min() ; max_cases = data_input['num_cas
 min_diseased = data_input['num_diseased_7dRA'].min() ; max_diseased = data_input['num_diseased_7dRA'].max()
 min_movement = data_input['movement_change_7dRA'].min() ; max_movement = data_input['movement_change_7dRA'].max()
 min_anosmia = data_input['anosmia'].min() ; max_anosmia = data_input['anosmia'].max()
-min_tos = data_input['tos'].min() ; max_tos = data_input['tos'].max()
+# min_tos = data_input['tos'].min() ; max_tos = data_input['tos'].max()
 min_fiebre = data_input['fiebre'].min() ; max_fiebre = data_input['fiebre'].max()
 min_covid = data_input['covid'].min() ; max_covid = data_input['covid'].max()
 
@@ -136,7 +137,7 @@ data_input.loc[:,'num_cases-N'] = (data_input['num_cases_7dRA']-min_cases)/(max_
 data_input.loc[:,'num_diseased-N'] = (data_input['num_diseased_7dRA']-min_diseased)/(max_diseased-min_diseased)
 data_input.loc[:,'movement-N'] = (data_input['movement_change_7dRA']-min_movement)/(max_movement-min_movement)
 data_input.loc[:,'anosmia-N'] = (data_input['anosmia']-min_anosmia)/(max_anosmia-min_anosmia)
-data_input.loc[:,'tos-N'] = (data_input['tos']-min_tos)/(max_tos-min_tos)
+# # data_input.loc[:,'tos-N'] = (data_input['tos']-min_tos)/(max_tos-min_tos)
 data_input.loc[:,'fiebre-N'] = (data_input['fiebre']-min_fiebre)/(max_fiebre-min_fiebre)
 data_input.loc[:,'covid-N'] = (data_input['covid']-min_covid)/(max_covid-min_covid)
 
@@ -158,7 +159,7 @@ pred_forecast = pred_forecast[['date_time','forecast_cases']]
 #--------------------------------------------------------------------------------------------------
 #-------------------------------------- Viz predictions -------------------------------------------
 
-time_mask = datetime.strptime('2021-03-28','%Y-%m-%d')
+time_mask = datetime.strptime('2021-04-04','%Y-%m-%d')
 data_mask = data_input['date_time'] >= time_mask
 actual_data = data_input[data_mask].copy()
 actual_data['date_time'] = pd.to_datetime(actual_data['date_time'], format='%Y-%m-%d')

@@ -12,7 +12,7 @@ class BaseCOVDataset(Dataset):
         return self.len
     
     def __getitem__(self, index):
-        x_cols = ['num_cases-N', 'num_diseased-N', 'movement-N', 'covid-N', 'anosmia-N', 'tos-N', 'fiebre-N']
+        x_cols = ['num_cases-N', 'num_diseased-N', 'movement-N', 'covid-N', 'anosmia-N', 'fiebre-N']
         y_cols = ['num_cases-N']
         x = self.data.iloc[index: index+self.history_len, :][x_cols].values
         y = self.data.iloc[index+self.history_len, :][y_cols].values.astype('float')
