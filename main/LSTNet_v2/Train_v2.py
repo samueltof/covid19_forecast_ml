@@ -109,7 +109,7 @@ data_movement_change = data_movement_change.drop('poly_id', axis=1)
 
 ### Load Google Trends data for Bogota
 if args.GT_trends == None:
-    data_GT = pd.read_csv(data_GT_path, usecols=['date_time','anosmia','fiebre','covid'])
+    data_GT = pd.read_csv(data_GT_path, usecols=['date_time','anosmia','fiebre','covid','neumonia','sintomas covid'])
 elif args.GT_trends == 'all':
     data_GT = pd.read_csv(data_GT_path)
     data_GT = data_GT.drop('Unnamed: 0', axis=1)

@@ -1,117 +1,71 @@
-term,r
-anosmia,0
-dolor de pecho,1
-dolor pecho,1
-opresion en el pecho,1
-opresion en pecho,1
-opresion pecho,1
-resfriado,2
-resfriado comun,2
-gripa,2
-gripe,2
-sintomas resfriado,3
-sintomas gripa,3
-sintomas gripe,3
-sintomas de resfriado,3
-sintomas de gripa,3
-sintomas de gripe,3
-gripa fiebre,3
-gripe fiebre,3
-tos,4
-tos covid,4
-toser,4
-tos y fiebre,4
-tos fiebre,4
-covid,5
-cobid,5
-covis,5
-covid minsalud,6
-covid ministerio de salud,6
-covid ministerio salud,6
-sintomas covid,7
-sintomas de covid,7
-sintomas del covid,7
-sintomas covid-19,7
-sintomas de covid-19,7
-sintomas del covid-19,7
-covid-19,6
-covid-19 oms,8
-tos seca,4
-me siento cansado,9
-me siento cansada,9
-cansancio,9
-fiebre,10
-fiebre y tos,10
-fiebre tos,10
-fiebre y covid,10
-fiebre covid,10
-bronquitis,11
-contagioso,12
-contagiar,12
-me contagie,12
-tiempo contagio,13
-tiempo de contagio,13
-cuanto tiempo dura el covid,13
-como es la tos del covid,4
-tos del covid,4
-tos de covid,4
-duracion covid,14
-exposicion,15
-contacto caso,15
-contacto covid,15
-superar covid,14
-medicamentos para el covid,16
-medicamentos para covid,16
-medicamentos covid,16
-remedios para covid,16
-remedios covid,16
-medicina para covid,16
-medicina covid,16
-medicamentos para gripa,17
-medicamentos gripa,17
-remedios para gripa,17
-remedios gripa,17
-medicamentos para gripe,17
-medicamentos gripe,17
-remedios para gripe,17
-remedios gripe,17
-como bajar la fiebre,17
-influenza,18
-influenza b,18
-sintomas influenza,18
-aislamiento covid,19
-aislamiento preventivo,19
-dolor en articulaciones,20
-dolor articulaciones,20
-perdida del gusto y olfato,0
-perdida de gusto y olfato,0
-perdida gusto y olfato,0
-perdida gusto olfato,0
-perdida del olfato,0
-perdida de olfato,0
-perdida olfato,0
-perdida del gusto,0
-perdida de gusto,0
-perdida gusto,0
-sangrado de nariz,21
-sangrado nariz,21
-oseltamivir,22
-dolor tos,23
-dolor toser,23
-neumonia,24
-neumonia por covid,24
-neumonia covid,24
-cuarentena,25
-enfermedad respiratoria,26
-dextrometorfano,27
-virus respiratorio,26
-mocos,28
-sars-cov-2,6
-dolor de garganta,29
-dolor garganta,29
-quedarse en casa,25
-faringitis,30
-bronquitis,31
-sintomas de bronquitis,31
-sintomas bronquitis,31
-oseltamivir,32
+term,
+anosmia,
+chest pain,
+chest tightness,
+cold,
+cold symptoms,
+cold with fever,
+contagious flu,
+cough,
+cough and fever,
+cough fever,
+covid,
+covid symptoms,
+covid-19,
+covid-19 who,
+dry cough,
+feeling exhausted,
+feeling tired,
+fever,
+fever cough,
+flu and bronchitis,
+flu complications,
+how long are you contagious,
+how long does covid last,
+how to get over the flu,
+how to get rid of flu,
+how to get rid of the flu,
+how to reduce fever,
+influenza,
+influenza b symptoms,
+isolation,
+joints aching,
+loss of smell,
+loss smell,
+loss taste,
+nose bleed,
+oseltamivir,
+painful cough,
+pneumonia,
+pneumonia,
+pregnant and have the flu,
+quarantine,
+remedies for the flu,
+respiratory flu,
+robitussin,
+robitussin cf.,
+robitussin cough,
+rsv,
+runny nose,
+sars-cov 2,
+sars-cov-2,
+sore throat,
+stay home,
+strep,
+strep throat,
+symptoms of bronchitis,
+symptoms of flu,
+symptoms of influenza,
+symptoms of influenza b,
+symptoms of pneumonia,
+symptoms of rsv,
+tamiflu dosage,
+tamiflu dose,
+tamiflu drug,
+tamiflu generic,
+tamiflu side effects,
+tamiflu suspension,
+tamiflu while
+pregnant,
+tamiflu wiki,
+tessalon,
